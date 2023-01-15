@@ -67,3 +67,6 @@ python predict.py model=yolov8x-seg.pt source="test1.mp4"
 
 
 [![Watch the Complete Tutorial for the Step by Step Explanation](https://img.youtube.com/vi/9jRRZ-WL698/0.jpg)]([https://www.youtube.com/watch?v=StTqXEQ2l-Y](https://www.youtube.com/watch?v=9jRRZ-WL698))
+
+## References
+- https://github.com/WongKinYiu/yolov7
