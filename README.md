@@ -54,10 +54,10 @@ python predict.py model=yolov8x-seg.pt source="test1.mp4"
 
 ### RESULTS
 
-#### Vehicles Detection, Tracking and Counting 
+#### Object Segmentation and DeepSORT Tracking (ID + Trails)
 ![](./ultralytics/figure1.png)
 
-#### Vehicles Detection, Tracking and Counting
+#### Object Segmentation and DeepSORT Tracking (ID + Trails)
 
 ![](./ultralytics/figure2.png)
 
