@@ -5,32 +5,26 @@ YOLOv8 Segmentation with DeepSORT Object Tracking(ID + Trails) </H1>
 The google colab file link for yolov8 object detection and tracking is provided below, you can check the implementation in Google Colab, and its a single click implementation
 ,you just need to select the Run Time as GPU, and click on Run All.
 
-[`Google Colab File`](https://colab.research.google.com/drive/17PKi3fRtAYWinw1OcE7G87f9Gu96A6yq?usp=sharing)
+[`Google Colab File`](https://colab.research.google.com/drive/1wRkrquf_HMV7tyKy2zDAuqqK9G4zZub5?usp=sharing)
 
 ## Steps to run Code
 
 - Clone the repository
 ```
-git clone https://github.com/MuhammadMoinFaisal/YOLOv8-DeepSORT-Object-Tracking.git
+git clone https://github.com/MuhammadMoinFaisal/YOLOv8_Segmentation_DeepSORT_Object_Tracking.git
 ```
 - Goto the cloned folder.
 ```
-cd YOLOv8-DeepSORT-Object-Tracking
+cd YOLOv8_Segmentation_DeepSORT_Object_Tracking
 ```
-- Install the requirements
+- Install the Dependencies
 ```
-pip install -r requirements.txt
-
-```
-- To use the YOLOv8 Command Line Interface, install the Ultralytics Package
-```
-
-pip install ultralytics
+pip install -e '.[dev]'
 
 ```
 - Setting the Directory.
 ```
-cd yolo/v8/detect
+cd ultralytics/yolo/v8/segment
 
 ```
 - Downloading the DeepSORT Files From The Google Drive 
@@ -38,18 +32,24 @@ cd yolo/v8/detect
 
 https://drive.google.com/drive/folders/1kna8eWGrSfzaR6DtNJ8_GchGgPMv3VC8?usp=sharing
 ```
-- After downloading the DeepSORT Zip file from the drive, unzip it go into the subfolders and place the deep_sort_pytorch folder into the yolo/v8/detect folder
+- After downloading the DeepSORT Zip file from the drive, unzip it go into the subfolders and place the deep_sort_pytorch folder into the ultralytics/yolo/v8/segment folder
 
-- Downloading a Sample Video from the Google Drive
+- Downloading a Sample Videos from the Google Drive
+- Demo Video 1
+```
+gdown "https://drive.google.com/uc?id=19P9Cf9UiJ9gU9KHnAfud6hrFOgobETTX"
+```
+
+-Demo Video 2
 ```
 gdown "https://drive.google.com/uc?id=1rjBn8Fl1E_9d0EMVtL24S9aNQOJAveR5&confirm=t"
 ```
 
 - Run the code with mentioned command below.
 
-- For yolov8 object detection + Tracking
+- For yolov8 segmentation + Tracking
 ```
-python tracking.py model=yolov8l.pt source="test3.mp4" show=True
+python predict.py model=yolov8x-seg.pt source="test1.mp4"
 ```
 
 ### RESULTS
