@@ -7,6 +7,9 @@ The google colab file link for yolov8 segmentation and tracking is provided belo
 
 [`Google Colab File`](https://colab.research.google.com/drive/1wRkrquf_HMV7tyKy2zDAuqqK9G4zZub5?usp=sharing)
 
+## YouTube Video Tutorial Link
+
+[`YouTube Link`](https://www.youtube.com/watch?v=0JIPNk21ivU)
 ## Steps to run Code
 
 - Clone the repository
