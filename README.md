@@ -74,8 +74,8 @@ python predict.py model=yolov8x-seg.pt source="test1.mp4"
 
 ### RESULTS
 
-#### Object Segmentation and DeepSORT Tracking (ID + Trails)
-![](./ultralytics/figure1.png)
+#### Object Segmentation and DeepSORT Tracking (ID + Trails) and Vehicles Counting
+![](./ultralytics/figure_speed.png)
 
 #### Object Segmentation and DeepSORT Tracking (ID + Trails)
 
