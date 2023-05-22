@@ -256,9 +256,8 @@ class SegmentationPredictor(DetectionPredictor):
             cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
             if check_rect_overlap(bbow_xyxy, rectangle_top_left_back+rectangle_bottom_right_back) :
                 counter = counter -1   
-                else:
-                    continue
-            annotator.box_label(xyxy, label, color=colors(c, True))
+            else:
+                annotator.box_label(xyxy, label, color=colors(c, True))
 #             print(label)
         counters.append(counter)
         max_counter = max(counters)
