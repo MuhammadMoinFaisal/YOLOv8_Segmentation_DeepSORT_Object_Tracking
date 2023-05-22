@@ -18,19 +18,23 @@ from deep_sort_pytorch.deep_sort import DeepSort
 #at the same time
 from collections import deque
 import numpy as np
+from ultralytics.yolo.utils.plotting import Annotator, colors, save_one_box
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 data_deque = {}
-counters = []
 deepsort = None
 rectangle_top_left_back = (750, 470)
 rectangle_bottom_right_back = (1279, 719)
 rectangle_top_left = (141, 151)
-rectangle_bottom_right = (1150, 460)
+rectangle_bottom_right = (1279, 450)
 font_scale = 1
 font_thickness = 2
 text_position = (10, 50)
 font = cv2.FONT_HERSHEY_SIMPLEX
 font_color = (255, 255, 255)
+line_thickness =3
+hide_labels=False,  # hide labels
+hide_conf=False,
+
 def init_tracker():
     global deepsort
     cfg_deep = get_config()
@@ -212,9 +216,15 @@ class SegmentationPredictor(DetectionPredictor):
 
         # Print results
         for c in det[:, 5].unique():
-            n = (det[:, 5] == c).sum()  # detections per class
-            log_string += f"{n} {self.model.names[int(c)]}{'s' * (n > 1)}, "  # add to string
+            n = (det[:, 5] == c).sum()  
+            log_string += f"{n} {self.model.names[int(c)]}{'s' * (n > 1)}, "  
 
+        # for c in det[:, 5].unique():
+        #                 n = (det[:, 5] == c).sum()  # detections per class
+        #                 s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+
+        # print(self.model.names)
+        annotator = Annotator(im0, line_width=line_thickness, example=str(self.model.names))
         # Mask plotting
         self.annotator.masks(
             mask,
@@ -230,25 +240,16 @@ class SegmentationPredictor(DetectionPredictor):
         confs = []
         oids = []
         outputs = []
+        counters = []
         # Write results
-        counters.append(counter)
-        print(f"objects detected {count}") 
-        print(f"Total objects detected: {counter}")
-        max_counter = max(counters)
-        min_counter = min(counters)
-        total_count = sum(counters)
-        frame_count += len(counters)
-        if frame_count > 0:
-            avg_count = total_count / frame_count
-        else:
-            avg_count = 0
-        print(f"Max objects detected: {max_counter}")
-        for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):
         
+        for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):
+            # seg = segments[j].reshape(-1)  # (n,2) to (n*2)
+            line = (cls, conf)
             x_c, y_c, bbox_w, bbox_h = xyxy_to_xywh(*xyxy)
             bbow_xyxy = [tensor.item() for tensor in xyxy]
-            print("2")
             xywh_obj = [x_c, y_c, bbox_w, bbox_h]
+            label = f' {self.model.names[int(c)]} {conf:.2f}'
             xywh_bboxs.append(xywh_obj)
             confs.append([conf.item()])
             oids.append(int(cls))
@@ -259,18 +260,41 @@ class SegmentationPredictor(DetectionPredictor):
                     count +=1
                 else:
                     continue
+            annotator.box_label(xyxy, label, color=colors(c, True))
+            print(label)
+        counters.append(counter)
+        max_counter = max(counters)
+        min_counter = min(counters)
+        total_count = sum(counters)
+        frame_count += len(counters)
+        if frame_count > 0:
+            avg_count = total_count / frame_count
+        else:
+            avg_count = 0
+
+        print(f"objects detected {count}") 
+        print(f"Total objects detected: {counter}")
+        print(f"Max objects detected: {max_counter}")
         xywhs = torch.Tensor(xywh_bboxs)
         confss = torch.Tensor(confs)
-        outputs = deepsort.update(xywhs, confss, oids, im0)
-        if len(outputs) > 0:
-            bbox_xyxy = outputs[:, :4]
-            identities = outputs[:, -2]
-            object_id = outputs[:, -1]
-            print("1")
-            cv2.putText(im0, f'piglets detected: {counter} Max: {max_counter} Avg: {math.ceil(avg_count)} Min: {min_counter}', text_position, font, font_scale, font_color, font_thickness)
-            cv2.rectangle(im0, rectangle_top_left, rectangle_bottom_right, (255, 255, 255), 2)
-            cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
-            draw_boxes(im0, bbox_xyxy, self.model.names, object_id,identities)
+        cv2.putText(im0, f'piglets detected: {counter} Max: {max_counter} Avg: {math.ceil(avg_count)} Min: {min_counter}', text_position, font, font_scale, font_color, font_thickness)
+        cv2.putText(im0, f'objects detected {count}', (141, 500), font, font_scale, font_color,font_thickness)
+        cv2.rectangle(im0, rectangle_top_left, rectangle_bottom_right, (255, 255, 255), 2)
+        cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
+        # outputs = deepsort.update(xywhs, confss, oids, im0)
+        # if len(outputs) >= 0:
+        #     if check_rect_overlap(bbow_xyxy, rectangle_top_left_back+rectangle_bottom_right_back) or check_rect_overlap(bbow_xyxy, rectangle_top_left+rectangle_bottom_right) :
+        #         counter = counter -1    
+        #         if check_rect_overlap(bbow_xyxy, rectangle_top_left+rectangle_bottom_right):
+        #             count +=1
+        #         else:            
+        #             bbox_xyxy = outputs[:, :4]
+        #             identities = outputs[:, -2]
+        #             object_id = outputs[:, -1]
+                    # cv2.putText(im0, f'piglets detected: {counter} Max: {max_counter} Avg: {math.ceil(avg_count)} Min: {min_counter}', text_position, font, font_scale, font_color, font_thickness)
+                    # cv2.rectangle(im0, rectangle_top_left, rectangle_bottom_right, (255, 255, 255), 2)
+                    # cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
+                    # draw_boxes(im0, bbox_xyxy, self.model.names, object_id,identities)
         return log_string
         
 
