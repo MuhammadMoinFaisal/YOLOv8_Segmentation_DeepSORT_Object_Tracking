@@ -9,7 +9,7 @@ from ultralytics.yolo.utils.plotting import colors, save_one_box
 
 from ultralytics.yolo.v8.detect.predict import DetectionPredictor
 from numpy import random
-
+import math
 
 import cv2
 from deep_sort_pytorch.utils.parser import get_config
@@ -20,9 +20,17 @@ from collections import deque
 import numpy as np
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 data_deque = {}
-
+counters = []
 deepsort = None
-
+rectangle_top_left_back = (750, 470)
+rectangle_bottom_right_back = (1279, 719)
+rectangle_top_left = (141, 151)
+rectangle_bottom_right = (1150, 460)
+font_scale = 1
+font_thickness = 2
+text_position = (10, 50)
+font = cv2.FONT_HERSHEY_SIMPLEX
+font_color = (255, 255, 255)
 def init_tracker():
     global deepsort
     cfg_deep = get_config()
@@ -45,6 +53,12 @@ def xyxy_to_xywh(*xyxy):
     w = bbox_w
     h = bbox_h
     return x_c, y_c, w, h
+
+def check_rect_overlap(R1, R2):
+      if (R1[0]>=R2[2]) or (R1[2]<=R2[0]) or (R1[3]<=R2[1]) or (R1[1]>=R2[3]):
+         return False
+      else:
+         return True
 
 def xyxy_to_tlwh(bbox_xyxy):
     tlwh_bboxs = []
@@ -94,7 +108,7 @@ def UI_box(x, img, color=None, label=None, line_thickness=None):
 
 def draw_boxes(img, bbox, names,object_id, identities=None, offset=(0, 0)):
     #cv2.line(img, line[0], line[1], (46,162,112), 3)
-
+    counter =0
     height, width, _ = img.shape
     # remove tracked point from buffer if object is lost
     for key in list(data_deque):
@@ -102,6 +116,7 @@ def draw_boxes(img, bbox, names,object_id, identities=None, offset=(0, 0)):
         data_deque.pop(key)
 
     for i, box in enumerate(bbox):
+        
         x1, y1, x2, y2 = [int(i) for i in box]
         x1 += offset[0]
         x2 += offset[0]
@@ -160,8 +175,14 @@ class SegmentationPredictor(DetectionPredictor):
                 pred[:, :4] = ops.scale_boxes(img.shape[2:], pred[:, :4], shape).round()
 
         return (p, masks)
-
     def write_results(self, idx, preds, batch):
+        counter =0
+        count = 0
+        min_counter = 0
+        max_counter =0
+        avg_counter = 0
+        total_count = 0
+        frame_count =0
         p, im, im0 = batch
         log_string = ""
         if len(im.shape) == 3:
@@ -202,30 +223,56 @@ class SegmentationPredictor(DetectionPredictor):
             255 if self.args.retina_masks else im[idx])
 
         det = reversed(det[:, :6])
+        counter +=len(det)
+        print(counter)
         self.all_outputs.append([det, mask])
         xywh_bboxs = []
         confs = []
         oids = []
         outputs = []
         # Write results
+        counters.append(counter)
+        print(f"objects detected {count}") 
+        print(f"Total objects detected: {counter}")
+        max_counter = max(counters)
+        min_counter = min(counters)
+        total_count = sum(counters)
+        frame_count += len(counters)
+        if frame_count > 0:
+            avg_count = total_count / frame_count
+        else:
+            avg_count = 0
+        print(f"Max objects detected: {max_counter}")
         for j, (*xyxy, conf, cls) in enumerate(reversed(det[:, :6])):
+        
             x_c, y_c, bbox_w, bbox_h = xyxy_to_xywh(*xyxy)
+            bbow_xyxy = [tensor.item() for tensor in xyxy]
+            print("2")
             xywh_obj = [x_c, y_c, bbox_w, bbox_h]
             xywh_bboxs.append(xywh_obj)
             confs.append([conf.item()])
             oids.append(int(cls))
+            cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
+            if check_rect_overlap(bbow_xyxy, rectangle_top_left_back+rectangle_bottom_right_back) or check_rect_overlap(bbow_xyxy, rectangle_top_left+rectangle_bottom_right) :
+                counter = counter -1    
+                if check_rect_overlap(bbow_xyxy, rectangle_top_left+rectangle_bottom_right):
+                    count +=1
+                else:
+                    continue
         xywhs = torch.Tensor(xywh_bboxs)
         confss = torch.Tensor(confs)
-          
         outputs = deepsort.update(xywhs, confss, oids, im0)
         if len(outputs) > 0:
             bbox_xyxy = outputs[:, :4]
             identities = outputs[:, -2]
             object_id = outputs[:, -1]
-            
+            print("1")
+            cv2.putText(im0, f'piglets detected: {counter} Max: {max_counter} Avg: {math.ceil(avg_count)} Min: {min_counter}', text_position, font, font_scale, font_color, font_thickness)
+            cv2.rectangle(im0, rectangle_top_left, rectangle_bottom_right, (255, 255, 255), 2)
+            cv2.rectangle(im0, rectangle_top_left_back, rectangle_bottom_right_back, (0, 0, 0), -1)
             draw_boxes(im0, bbox_xyxy, self.model.names, object_id,identities)
         return log_string
-
+        
 
 @hydra.main(version_base=None, config_path=str(DEFAULT_CONFIG.parent), config_name=DEFAULT_CONFIG.name)
 def predict(cfg):
